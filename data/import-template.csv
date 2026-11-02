@@ -1,0 +1,3 @@
+id,occurredAt,locationName,lat,lng,severity,fatalities,injuries,vehicle,weather,roadCondition,description,source,sourceUrl,license
+"SAMPLE-01-01","2026-10-31T17:29:59.000Z","Silk Board Junction","12.9176","77.6243","FATAL","1","0","Car","Rain","Wet","Synthetic incident generated to demonstrate spatial clustering and temporal analysis.","Tracify synthetic demonstration v1","","CC0-1.0"
+"SAMPLE-01-02","2026-10-27T16:29:59.000Z","Silk Board Junction","12.918275463180551","77.6231711555057","MODERATE","0","1","Two-wheeler","Clear","Dry","Synthetic incident generated to demonstrate spatial clustering and temporal analysis.","Tracify synthetic demonstration v1","","CC0-1.0"

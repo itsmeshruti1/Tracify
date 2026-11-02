@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid && request.auth.token.email_verified == true;
+    }
+    function boundedString(value, min, max) {
+      return value is string && value.size() >= min && value.size() <= max;
+    }
+    function validAttachment(a, uid, id) {
+      return a is map && a.keys().hasAll(['name', 'type', 'size', 'path']) &&
+        a.keys().hasOnly(['name', 'type', 'size', 'path']) && boundedString(a.name, 1, 160) &&
+        a.type in ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'] &&
+        a.size is int && a.size > 0 && a.size <= 5242880 && a.path == 'evidence/' + uid + '/' + id;
+    }
+    function validIncident(d, uid, id) {
+      return d.keys().hasAll(['id', 'occurredAt', 'locationName', 'lat', 'lng', 'severity', 'fatalities', 'injuries',
+          'vehicle', 'weather', 'roadCondition', 'description', 'sourceKind', 'source', 'sourceUrl', 'license', 'verification']) &&
+        d.keys().hasOnly(['id', 'occurredAt', 'locationName', 'lat', 'lng', 'severity', 'fatalities', 'injuries',
+          'vehicle', 'weather', 'roadCondition', 'description', 'sourceKind', 'source', 'sourceUrl', 'license', 'verification', 'attachment']) &&
+        d.id == id && boundedString(d.id, 1, 80) && d.id.matches('[A-Za-z0-9_-]+') &&
+        d.occurredAt is timestamp && d.occurredAt >= timestamp.date(1970, 1, 1) && d.occurredAt <= request.time &&
+        boundedString(d.locationName, 1, 160) &&
+        d.lat is number && d.lat >= -90 && d.lat <= 90 && d.lng is number && d.lng >= -180 && d.lng <= 180 &&
+        d.severity in ['MINOR', 'MODERATE', 'SEVERE', 'FATAL'] &&
+        d.fatalities is int && d.fatalities >= 0 && d.fatalities <= 100 &&
+        d.injuries is int && d.injuries >= 0 && d.injuries <= 100 &&
+        ((d.fatalities > 0 && d.severity == 'FATAL') || (d.fatalities == 0 && d.severity != 'FATAL')) &&
+        d.vehicle in ['Two-wheeler', 'Car', 'Bus', 'Truck', 'Pedestrian', 'Bicycle', 'Other'] &&
+        d.weather in ['Clear', 'Rain', 'Fog', 'Wind', 'Unknown'] &&
+        d.roadCondition in ['Dry', 'Wet', 'Waterlogged', 'Construction', 'Unknown'] &&
+        boundedString(d.description, 0, 1500) && d.sourceKind in ['imported', 'community'] &&
+        boundedString(d.source, 1, 200) && boundedString(d.sourceUrl, 0, 500) &&
+        (d.sourceUrl == '' || d.sourceUrl.matches('https://.*')) && boundedString(d.license, 0, 120) &&
+        d.verification == 'unverified' &&
+        (d.sourceKind != 'community' || (d.source == 'Community submission' && d.sourceUrl == '' && d.license == '')) &&
+        (!('attachment' in d) || validAttachment(d.attachment, uid, id));
+    }
+    match /users/{uid}/incidents/{id} {
+      allow get: if owner(uid);
+      allow list: if owner(uid) && request.query.limit <= 2001;
+      allow create: if owner(uid) && validIncident(request.resource.data, uid, id);
+      // Reports are immutable: corrections require deletion and resubmission.
+      allow update: if false;
+      allow delete: if owner(uid);
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

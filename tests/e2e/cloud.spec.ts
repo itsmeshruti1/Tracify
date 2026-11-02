@@ -1,0 +1,40 @@
+import { test, expect } from '@playwright/test';
+
+test('verified cloud account retains private incidents and evidence across reload', async ({ page, request }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/'); await page.getByRole('button', { name: 'Private cloud', exact: true }).click();
+  await page.getByRole('button', { name: 'Open cloud sign in' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Create account', exact: true }).first().click();
+  await dialog.getByLabel('Name', { exact: true }).fill('Emulator tester');
+  const email = `tester-${Date.now()}@example.test`;
+  await dialog.getByLabel('Email', { exact: true }).fill(email);
+  await dialog.getByLabel('Password', { exact: true }).fill('Emulator-password-123');
+  await dialog.getByRole('button', { name: 'Create account', exact: true }).last().click();
+  await expect(dialog.getByText('Verify your email to access cloud storage.', { exact: false })).toBeVisible();
+  const response = await request.get('http://127.0.0.1:9099/emulator/v1/projects/demo-tracify/oobCodes');
+  const codes = (await response.json()).oobCodes as { email: string; oobCode: string; requestType: string }[];
+  const code = [...codes].reverse().find(c => c.email === email && c.requestType === 'VERIFY_EMAIL')!;
+  expect(code).toBeTruthy();
+  const verify = await request.post('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:update?key=demo-api-key', { data: { oobCode: code.oobCode } });
+  expect(verify.ok()).toBe(true);
+  await dialog.getByRole('button', { name: 'I verified my email' }).click();
+  await expect(dialog.getByText('Verify your email to access cloud storage.', { exact: false })).not.toBeVisible();
+  await dialog.getByRole('button', { name: 'Close dialog' }).click();
+  await expect(page.getByRole('button', { name: 'Report incident' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Report incident' }).click();
+  await page.getByLabel('Location name', { exact: true }).fill('Private emulator junction');
+  await page.getByLabel('Optional evidence', { exact: false }).setInputFiles({ name: 'private.png', mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64') });
+  await page.getByRole('checkbox').check(); await page.getByRole('button', { name: 'Save report', exact: true }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await page.reload(); await page.getByRole('button', { name: 'Private cloud', exact: true }).click();
+  await page.getByRole('button', { name: 'Incident register' }).click();
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await expect(page.locator('tbody')).toContainText('Private emulator junction');
+  await page.getByRole('button', { name: 'Details', exact: false }).click();
+  const image = page.getByRole('dialog').getByRole('img');
+  await expect(image).toBeVisible();
+  await expect.poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});

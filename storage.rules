@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid && request.auth.token.email_verified == true;
+    }
+    match /evidence/{uid}/{incidentId} {
+      allow read, delete: if owner(uid);
+      allow create: if owner(uid) && resource == null && incidentId.matches('[A-Za-z0-9_-]{1,80}') &&
+        request.resource.size > 0 && request.resource.size <= 5242880 &&
+        request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'];
+      allow update: if false;
+    }
+    match /{path=**} { allow read, write: if false; }
+  }
+}

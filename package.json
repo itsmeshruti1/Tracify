@@ -1,0 +1,45 @@
+{
+  "name": "tracify",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port=3000 --host=0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:java": "node scripts/java-check.mjs",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:cloud": "firebase emulators:exec --project demo-tracify --only auth,firestore,storage \"playwright test --config playwright.cloud.config.ts\"",
+    "test:rules": "firebase emulators:exec --project demo-tracify --only firestore,storage \"tsx --test tests/security/*.test.ts\"",
+    "check": "npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "firebase": "13.1.0",
+    "leaflet": "1.9.4",
+    "lucide-react": "0.546.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "6.2.1",
+    "@playwright/test": "1.64.1",
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase-tools": "15.34.2",
+    "fake-indexeddb": "6.2.7",
+    "@types/leaflet": "1.9.22",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6"
+  }
+}

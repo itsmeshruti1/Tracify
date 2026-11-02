@@ -1,0 +1,34 @@
+node_modules/
+build/
+dist/
+coverage/
+java/target/
+*.class
+playwright-report/
+test-results/
+test-results-cloud/
+.firebase/
+artifacts/
+accidentsense-final.zip
+accidentsense-final.zip.sha256
+roadlens-final.zip
+roadlens-final.zip.sha256
+tracify-final.zip
+tracify-final.zip.sha256
+.DS_Store
+*.log
+
+# Environment & Secret Files (Never commit raw secrets to GitHub)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*secret*
+*credentials*.json
+service-account*.json
+
+# Local Applet & Cache Configs containing API Keys
+firebase-applet-config.json
+.gmp_cache/
+.aistudio/

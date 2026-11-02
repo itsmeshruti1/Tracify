@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:3000", "http://127.0.0.1:3000", "https://YOUR_DEPLOYED_DOMAIN"],
+    "method": ["GET"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]
